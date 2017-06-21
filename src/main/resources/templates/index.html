@@ -1,0 +1,210 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <title>Getting Started: Serving Web Content</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" th:href="@{/css/style.css}" />
+    <script
+            src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="wrapper">
+
+    <header class="header" th:fragment="headerfragm">
+        <div class="header">
+            <a rel="nofollow" title="Main page title" class="sitelogo" href="#">Yaroslav's ToDoList</a>
+            <form id="searchform" method="get" action="/index.php">
+                <input type="text" name="s" id="s" value="Search..." onblur="if(this.value=='') this.value='Search...';"
+
+                       onfocus="if(this.value=='Search...') this.value='';" title="Please type the searching phrase" />
+            </form>
+
+            <aside class="horizontal-sidebar">
+                <ul id="menu">
+                    <li>
+                        <a href="#">Home</a>
+                    </li>
+                    <li><a href="#">News</a></li>
+                    <li>
+                        <a href="#">Reviews</a>
+                        <ul>
+                            <li><a href="#">One</a></li>
+                            <li><a href="#">Two</a></li>
+                            <li><a href="#">Three</a></li>
+                            <li><a href="#">Four</a></li>
+                        </ul>
+                    </li>
+
+                    <li>
+                        <a href="#openModal">Feedback</a>
+                    </li>
+
+                </ul>
+            </aside><!-- .horizontal-sidebar -->
+
+        </div><!-- .class header-->
+
+    </header><!-- .header-->
+
+    <div class="middle">
+
+        <aside class="left-sidebar" th:fragment="left-sidebarfragm">
+            <strong>Left Sidebar:</strong> Left sidebar text
+        </aside><!-- .left-sidebar -->
+
+        <div class="container">
+            <main class="content">
+
+                <a class="add-new-task" th:href="@{'http://localhost:8080/app/tasks/add'}">Add new Task</a>
+                <br/>
+
+                <table class="mainTable">
+                    <tr >
+                        <td>Id</td>
+                        <td>Task</td>
+                        <td>Priority</td>
+
+                        <td sec:authorize="isAuthenticated()">Delete</td>
+                        <td sec:authorize="isAuthenticated()">Edit</td>
+                    </tr>
+<!--
+                    <th:block th:each="task : ${list}">
+                        <tr th:value="${task.id}">
+                            <td th:text="${task.id}">A Smoke Test'</td>
+                            <td th:text="${task.name}">A Smoke Test'</td>
+                            <td th:text="${task.priority}">A Smoke Test'</td>
+
+                            <td sec:authorize="isAuthenticated()">
+                                <a class="delete" th:value="${task.id}" href="#">Delete</a>
+                            </td>
+                            <td sec:authorize="isAuthenticated()">
+                                <a id="editing" th:href="@{'http://localhost:8080/app/tasks/edit/'+${task.id} }">Edit</a>
+                            </td>
+                        </tr>
+                    </th:block>-->
+                </table>
+            </main><!-- .content -->
+        </div><!-- .container-->
+
+
+
+        <aside class="right-sidebar" th:fragment="right-sidebarfragm">
+            <strong>Right Sidebar:</strong> Right sidebar text
+        </aside><!-- .right-sidebar -->
+
+    </div><!-- .middle-->
+
+    <footer class="footer" th:fragment="footerfragm">
+        <strong>Footer:</strong> Footer text
+    </footer><!-- .footer -->
+
+</div><!-- .wrapper -->
+
+<script>
+    $(document).ready(function() {
+
+        var securityRang;
+
+        $.get("/credentials", function(data){
+            data.map(function(d){
+                console.log("authorityes are " + d.authority);
+                securityRang = d.authority;
+            });
+        });
+
+        $.get("/app/tasks", function (data) {
+            $("#tab").append("<table>");
+            data.map(function (d) {
+                var trStart = "<tr>";
+                var inner = "<td>" + d.id + "</td>" + "<td>" + d.name + "</td>" + " - " + "<td>" + d.priority + "</td>";
+                var secInner="";
+                console.log("second sec block " + securityRang);
+                if(securityRang=="ROLE_USER"){
+                    secInner = '<td><a class="delete" value="'+d.id+'" href="#">Delete</a></td> <td><a class="editing" value="'+d.id+'" href="/app/tasks/edit/'+d.id+'">Edit</a></td>"';
+                }
+
+                var trEnd = "</tr>";
+
+
+                $(".mainTable").append(trStart + inner + secInner + trEnd);
+            });
+            $("#tab").append("</table>");
+        });
+
+        $(".delete").mouseenter(function(e){
+            console.log(  $(this).attr("value")  );
+        });
+
+        $(".delete").click(function (e) {
+
+            $.ajax({
+                type: "POST",
+                url: "/app/tasks/delete",
+                data: {id:$(this).attr("value")},
+                success: function (data) {
+                    $(this).hide();
+                },
+                error: function (xhr, thrownError) {
+                    var msg = '';
+                    if (xhr.status === 0) {
+                        msg = 'Not connect.\n Verify Network.';
+                    } else if (xhr.status == 404) {
+                        msg = 'Requested page not found. [404]';
+                    } else if (xhr.status == 500) {
+                        msg = 'Internal Server Error [500].';
+                    } else if (thrownError === 'parsererror') {
+                        msg = 'Requested JSON parse failed.';
+                    } else if (thrownError === 'timeout') {
+                        msg = 'Time out error.';
+                    } else if (thrownError === 'abort') {
+                        msg = 'Ajax request aborted.';
+                    } else {
+                        msg = 'Uncaught Error.\n' + xhr.responseText;
+                    }
+                    alert(msg);
+                }
+            });
+
+
+        });
+
+        $(".editing").click(function (e) {
+
+            $.ajax({
+                type: "POST",
+                url: "/app/tasks/delete",
+                data: {id:$(this).attr("value")},
+                success: function (data) {
+                    $(this).hide();
+                },
+                error: function (xhr, thrownError) {
+                    var msg = '';
+                    if (xhr.status === 0) {
+                        msg = 'Not connect.\n Verify Network.';
+                    } else if (xhr.status == 404) {
+                        msg = 'Requested page not found. [404]';
+                    } else if (xhr.status == 500) {
+                        msg = 'Internal Server Error [500].';
+                    } else if (thrownError === 'parsererror') {
+                        msg = 'Requested JSON parse failed.';
+                    } else if (thrownError === 'timeout') {
+                        msg = 'Time out error.';
+                    } else if (thrownError === 'abort') {
+                        msg = 'Ajax request aborted.';
+                    } else {
+                        msg = 'Uncaught Error.\n' + xhr.responseText;
+                    }
+                    alert(msg);
+                }
+            });
+
+
+        });
+
+    });
+</script>
+
+</body>
+</html>

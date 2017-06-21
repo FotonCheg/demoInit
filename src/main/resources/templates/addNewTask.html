@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Getting Started: Serving Web Content</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" th:href="@{/css/style.css}" />
+    <script
+            src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+
+</head>
+<body>
+
+<div class="wrapper">
+
+    <header class="header" th:include="index :: headerfragm">
+
+    </header><!-- .header-->
+
+    <div class="middle">
+
+        <aside class="left-sidebar" th:include="index :: left-sidebarfragm">
+
+        </aside><!-- .left-sidebar -->
+
+        <div class="container">
+            <main class="content">
+
+                <form id="form">
+                    <input name="name" placeholder="Please enter name of task"/>
+                    <input name="priority" placeholder="please enter priority of your task"/>
+                    <input type="submit" value="Ok!"/>
+                </form>
+
+
+            </main><!-- .content -->
+        </div><!-- .container-->
+
+        <aside class="right-sidebar" th:include="index :: right-sidebarfragm">
+
+        </aside><!-- .right-sidebar -->
+
+    </div><!-- .middle-->
+
+    <footer class="footer" th:include="index :: footerfragm">
+
+    </footer><!-- .footer -->
+
+</div><!-- .wrapper -->
+<script>
+    $(document).ready(function() {
+
+        $("#form").submit(function (e) {
+
+            $.ajax({
+                type: "POST",
+                url: "/app/tasks/adding",
+                data: $("#form").serialize(),
+                success: function (data) {
+                    console.log(data);
+                    window.location.replace(data);
+                },
+                error: function (xhr, thrownError) {
+                    var msg = '';
+                    if (xhr.status === 0) {
+                        msg = 'Not connect.\n Verify Network.';
+                    } else if (xhr.status == 404) {
+                        msg = 'Requested page not found. [404]';
+                    } else if (xhr.status == 500) {
+                        msg = 'Internal Server Error [500].';
+                    } else if (thrownError === 'parsererror') {
+                        msg = 'Requested JSON parse failed.';
+                    } else if (thrownError === 'timeout') {
+                        msg = 'Time out error.';
+                    } else if (thrownError === 'abort') {
+                        msg = 'Ajax request aborted.';
+                    } else {
+                        msg = 'Uncaught Error.\n' + xhr.responseText;
+                    }
+                    alert(msg);
+                }
+            });
+
+
+        });
+
+    });
+</script>
+
+
+</body>
+</html>
